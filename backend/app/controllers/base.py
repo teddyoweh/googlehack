@@ -6,7 +6,7 @@ import os
 import google.generativeai as genai
 
 
-google_search_key="AIzaSyC-aPBlh5wU_bm4E5F10S5dZhCal6b0huE"
+google_search_key="AIzaSyAOpQpz7lmHvFzVMHTJdPZKFCd7aYVYAAQ"
 google_key = "AIzaSyADVEdIvZ4AihOaUMYhXmLY-bNN6VWReeo"
  
 api_key = google_search_key
@@ -66,6 +66,7 @@ def search_and_get_song_info(song_name):
 def create_5_songs(mood,genre,temp,contex):
     prompt = f"""
     Provide a list of 5 songs based on the following criteria:
+    regardless of the individual criteria
     - Mood: {mood}
     - Genre: {genre}
     - Tempo: {temp}
@@ -103,7 +104,7 @@ def create_5_songs(mood,genre,temp,contex):
 
 def create_15_songs(mood,genre,temp,context,songs:list,count):
     songx  ="".join([f"{song}, " for song in songs])
-
+    count  = int(count)
     prompt = f"""
     Provide a list of {count} songs based on the following criteria:
     - Mood: {mood}

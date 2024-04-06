@@ -1,4 +1,22 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export default function Landing(){
+
+  getAllKeys = async () => {
+    let keys = []
+    try {
+      keys = await AsyncStorage.getAllKeys()
+      alert('damn')
+      console.log(keys, 'this is the keys')
+    } catch(e) {
+      // read key error
+    }
+  
+
+    // example console.log result:
+    // ['@MyApp_user', '@MyApp_key']
+  }
+  getAllKeys()
     return (
         <LinearGradient
         colors={['#2b174b', '#192f43', '#010303']}

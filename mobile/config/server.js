@@ -1,5 +1,5 @@
 
-export const ip = 'http://192.0.0.2:5555';
+export const ip = "http://172.20.10.10:5555";
 export const api_endpoints ={
  
     'create_5': ip + '/create5',

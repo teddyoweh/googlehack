@@ -1,14 +1,50 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View,Image, ScrollView, Dimensions,Animated, ImageBackground, TouchableOpacity, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { HambergerMenu, Magicpen } from 'iconsax-react-native';
+import { Add, HambergerMenu, Magicpen, Music, MusicLibrary2 } from 'iconsax-react-native';
 import { BlurView } from 'expo-blur';
 import { ArrowLeft2, Scroll,Heart,Pause } from 'iconsax-react-native';
 import { ye } from '../config/temp';
 import { useEffect, useRef, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { createStackNavigator } from '@react-navigation/stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
+import { removeLastTwoPlaylists } from '../config/storage';
+ 
+
 export default function Landing({ navigation }) {
+  clearAll = async () => {
+    try {
+      await AsyncStorage.clear()
+    } catch(e) {
+      // clear error
+    }
+  
+    console.log('Done.')
+  }
+ 
+    const [playlists, setPlaylists] = useState([]);
+    const [recentlyPlayedSongs,setRecentlyPlayedSongs] = useState([])
+    useEffect(() => {
+      const fetchPlaylistsAndRecentSongs = async () => {
+        try {
+          const existingPlaylists = await AsyncStorage.getItem('playlists');
+          const existingRecentSongs = await AsyncStorage.getItem('recentlyPlayedSongs');
+  
+          let parsedPlaylists = existingPlaylists ? JSON.parse(existingPlaylists) : [];
+          let parsedRecentSongs = existingRecentSongs ? JSON.parse(existingRecentSongs) : [];
+  
+          setPlaylists(parsedPlaylists);
+          setRecentlyPlayedSongs(parsedRecentSongs);
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      };
+  
+      fetchPlaylistsAndRecentSongs();
+    }, [playlists]);
+ 
     return (
         <LinearGradient
         colors={['#2b174b', '#192f43', '#010303']}
@@ -172,12 +208,14 @@ export default function Landing({ navigation }) {
     
     >
       {
-        [...Array(3)].map((item, index) => {
+        playlists.map((item, index) => {
           return (
             <Pressable
             onPress={()=>{
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
-                navigation.navigate('Music')
+                navigation.navigate('Music',{
+                  data:item
+                })
                 
             }}
             style={{
@@ -200,11 +238,11 @@ export default function Landing({ navigation }) {
             >
              
             <Image
-            source={{uri:"https://www.rollingstone.com/wp-content/uploads/2023/07/Burna-boy-new-album-big-7-song.jpg"}}
+            source={{uri:item["songs"][0]["thumbnail_url"]}}
             style={{
               width: Dimensions.get('window').width/3,
               height:  Dimensions.get('window').width/3+10,
-              borderRadius: 4
+              borderRadius: 8
             }}
             />
          
@@ -223,24 +261,15 @@ export default function Landing({ navigation }) {
                 <Text
                 style={{
                   color: 'white',
-                  fontSize: 20,
-                  fontWeight: '600',
+                  fontSize: 18,
+                  fontWeight: '400',
                   marginTop: 10
                 }}
                 >
-                  Ye.
+                  {item.name}
                 </Text>
            
-                <Text
-                style={{
-                  color: '#ddd',
-                  fontSize: 16,
-                  fontWeight: '300',
-                  marginTop: 3
-                }}
-                >
-                  Burna Boy
-                </Text>
+        
                 
               
              
@@ -248,6 +277,56 @@ export default function Landing({ navigation }) {
             </Pressable>
           )
       })}
+
+      {
+      playlists.length==0 &&
+   
+             <TouchableOpacity
+            onPress={()=>{
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+                // navigation.navigate('Generate')
+                
+            }}
+            style={{
+           
+              backgroundColor:'#7059f91b',
+              borderWidth: 1,
+              borderColor:'#7059f9'  ,
+              borderRadius: 27,
+            
+              width: Dimensions.get('window').width-18,
+              height:  Dimensions.get('window').width/3+10,
+              marginRight: 10,
+              marginTop: 10,
+              flexDirection: 'column',
+              justifyContent: 'center',
+              
+              alignItems:'center',
+              
+              
+          
+            }}
+            >
+             <MusicLibrary2 size="64" color="#7059f9"
+             variant='Bold'
+             />
+             <Text
+             style={{
+              color:'#7059f9',
+              marginTop:10,
+              fontWeight:'500'
+             }}
+             >
+              Empty
+             </Text>
+
+          
+          
+            </TouchableOpacity>
+    
+      }
+         
+           
     
     </ScrollView>
     </View>
@@ -305,9 +384,14 @@ export default function Landing({ navigation }) {
     
     >
       {
-        [...Array(3)].map((item, index) => {
+        recentlyPlayedSongs.map((item, index) => {
           return (
-            <View
+            <Pressable
+            onPress={()=>{
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+                
+                
+            }}
             style={{
            
               backgroundColor: 'transparent',
@@ -328,11 +412,11 @@ export default function Landing({ navigation }) {
             >
              
             <Image
-            source={{uri:"https://www.rollingstone.com/wp-content/uploads/2023/07/Burna-boy-new-album-big-7-song.jpg"}}
+            source={{uri:item["thumbnail_url"]}}
             style={{
               width: Dimensions.get('window').width/3,
               height:  Dimensions.get('window').width/3+10,
-              borderRadius: 4
+              borderRadius: 8
             }}
             />
          
@@ -351,31 +435,69 @@ export default function Landing({ navigation }) {
                 <Text
                 style={{
                   color: 'white',
-                  fontSize: 20,
-                  fontWeight: '600',
+                  fontSize: 18,
+                  fontWeight: '400',
                   marginTop: 10
                 }}
                 >
-                  Ye.
+                  {item.song_name}
                 </Text>
            
-                <Text
-                style={{
-                  color: '#ddd',
-                  fontSize: 16,
-                  fontWeight: '300',
-                  marginTop: 3
-                }}
-                >
-                  Burna Boy
-                </Text>
+        
                 
               
              
               </View>
-            </View>
+            </Pressable>
           )
       })}
+       {
+      recentlyPlayedSongs.length==0&&
+   
+      <TouchableOpacity
+     onPress={()=>{
+         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)
+         // navigation.navigate('Generate')
+         
+     }}
+     style={{
+    
+       backgroundColor:'#7059f91b',
+       borderWidth: 1,
+       borderColor:'#7059f9'  ,
+       borderRadius: 27,
+     
+       width: Dimensions.get('window').width-18,
+       height:  Dimensions.get('window').width/3+10,
+       marginRight: 10,
+       marginTop: 10,
+       flexDirection: 'column',
+       justifyContent: 'center',
+       
+       alignItems:'center',
+       
+       
+   
+     }}
+     >
+      <MusicLibrary2 size="64" color="#7059f9"
+      variant='Bold'
+      />
+      <Text
+      style={{
+       color:'#7059f9',
+       marginTop:10,
+       fontWeight:'500'
+      }}
+      >
+       No Recently Played Songs
+      </Text>
+
+   
+   
+     </TouchableOpacity>
+
+}
     
     </ScrollView>
     </View>

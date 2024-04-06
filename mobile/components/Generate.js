@@ -12,6 +12,9 @@ import PagerView from 'react-native-pager-view';
 import axios from 'axios';
 import { api_endpoints } from '../config/server';
 import { Audio } from 'expo-av';
+import { savePlaylistMethod, storeData } from '../config/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 function shortenText(text) {
     const maxLength =16;
     if (text.length <= maxLength) {
@@ -125,6 +128,166 @@ function shortenText(text) {
                     borderRadius: 10,
                     marginRight: 10
                 }}/>
+                <View>
+                <Text   
+            style={{
+                color: '#fff',
+                fontSize: 20,
+                fontWeight: '300'
+            }}
+            >
+                {shortenText(stripWhiteSpace(item.song_name))}
+            </Text>
+                <Text   
+            style={{
+                color: '#aaa',
+                fontSize: 18,
+                fontWeight: '300',
+                marginTop: 2
+            }}
+            >
+                {item.artist}
+            </Text>
+                </View>
+
+            </View>
+       
+          <Pressable onPress={() => {
+      if (sound && currentPlayingIndex === index) {
+        isPlaying ? pauseSound() : resumeSound();
+      } else {
+        playSound(item.audio_url, index);
+      }
+    }}
+          style={{
+            backgroundColor: '#7059f91b',
+            borderWidth: 1,
+            borderColor: '#7059f9',
+        
+            borderRadius: 50,
+            height: 40,
+            width: 40,
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+          >
+             {sound && currentPlayingIndex === index ? (
+      isPlaying ? (
+        <Pause size="23" variant='Bold' color="#7059f9" />
+      ) : (
+        <Play size="23" variant='Bold' color="#7059f9" />
+      )
+    ) : (
+      <Play size="23" variant='Bold' color="#7059f9" />
+    )}
+          </Pressable>
+     
+          
+        </Pressable>
+ 
+        </View>
+    )
+}
+function RenderPlaylistSongs({ item, index, data, setData, currentPlayingIndex, setCurrentPlayingIndex }) {
+    const [sound, setSound] = useState();
+  const [isPlaying, setIsPlaying] = useState(false);
+    const playSound = async (audioUrl, currentIndex) => {
+      try {
+        if (sound) {
+          await sound.stopAsync();
+          await sound.unloadAsync();
+        }
+  
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri: audioUrl },
+          { shouldPlay: true }
+        );
+  
+        setSound(newSound);
+        setCurrentPlayingIndex(currentIndex);
+        setIsPlaying(true);
+  
+        await newSound.playAsync();
+      } catch (error) {
+        console.error('Error playing sound', error);
+      }
+    };
+  
+    const pauseSound = async () => {
+      if (sound) {
+        await sound.pauseAsync();
+        setIsPlaying(false);
+        
+      }
+    };
+  
+    const resumeSound = async () => {
+      if (sound) {
+        await sound.playAsync();
+        setIsPlaying(true);
+      }
+    };
+  
+    useEffect(() => {
+      return sound
+        ? () => {
+            sound.stopAsync();
+            sound.unloadAsync();
+          }
+        : undefined;
+    }, [sound]);
+  
+    return (
+        <View
+        style={{
+            flexDirection:'row',
+            alignItems: 'center',
+            marginBottom: 10,
+        }}
+        >
+
+       
+        <Pressable
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                // if (songs.includes(item)) {
+                //     setSongs(songs.filter((i) => i !== item))
+                // } else {
+                //     setSongs([...songs, item])
+                // }
+            }}
+        key={index}
+        style={{
+            backgroundColor:   '#0000002e',
+            borderWidth: 1,
+            borderColor: 'transparent',
+            paddingHorizontal: 20,
+            borderRadius: 20,
+            paddingVertical: 11,
+         
+            marginRight: 9,
+            width: "100%",
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+        }}
+       
+        >
+            <View
+            style={{
+                flexDirection: 'row',
+                justifyContent: 'flex-start',
+                alignItems: 'center',
+            
+            }}
+            >
+                {/* <Image  source={{uri: item.thumbnail_url}} style={{
+                    width: 50,
+                    height: 50,
+                    borderRadius: 10,
+                    marginRight: 10
+                }}/> */}
                 <View>
                 <Text   
             style={{
@@ -522,6 +685,8 @@ function RenderContext({context,setContext}) {
     )
 }
 function RenderCreatePlaylist({data,setData,playlistName,setPlayListName}) {
+    const [currentPlayingIndex, setCurrentPlayingIndex] = useState(null);
+
     return (
         <ScrollView>
             <TextInput
@@ -557,6 +722,22 @@ function RenderCreatePlaylist({data,setData,playlistName,setPlayListName}) {
 
 
  />
+ {
+        data &&
+        data.map((item, index) => {
+      
+            return (
+                <View
+                key={index}
+                style={{
+             paddingHorizontal:10
+                }}
+                >
+                   <RenderPlaylistSongs item={item} song={item} index={index} data={data} setData={setData} currentPlayingIndex={index} setCurrentPlayingIndex={index} />
+                </View>
+            )
+        })
+ }
 
         </ScrollView>
     )
@@ -573,6 +754,12 @@ export default function GeneratePlay({ navigation }) {
     const [songs, setSongs] = useState([]);
     const [data,setData] = useState(null)
     const [playlistName,setPlayListName] = useState("")
+    function savePlaylist() {
+        
+        savePlaylistMethod(playlistName, data)
+    }
+   
+    
     const sendRequest = async () => {
         
         setLoading(true)
@@ -637,6 +824,9 @@ export default function GeneratePlay({ navigation }) {
         isLoading:isLoading,
         setLoading:setLoading,
         playlistName:playlistName,
+        setPlayListName:setPlayListName,
+        data:data,
+        setData:setData
     }
     const titles = [
         "Number of Songs",
@@ -750,7 +940,7 @@ export default function GeneratePlay({ navigation }) {
             }} initialPage={0}
             
             ref={pagerRef}
-            scrollEnabled={false}
+            // scrollEnabled={false}
 
    
             >
@@ -809,7 +999,13 @@ export default function GeneratePlay({ navigation }) {
                 } else {
                     if(index == 5) {
                        sendRequest_Main()
-                    }else{
+
+                    }
+                    else if(index == 6) {
+                        savePlaylist()
+                        navigation.goBack()
+                    }
+                    else{
                         handleScroll({nativeEvent: {position: index + 1}})
                     }
                

@@ -12,10 +12,23 @@ import Landing from './components/Landing';
 import { NavigationContainer } from '@react-navigation/native';
 import Music from './components/Music';
 import GeneratePlay from './components/Generate';
+import TestMusic from './components/TestMusic';
+import { Audio } from 'expo-av';
 
 const Stack = createStackNavigator();
 
 function MyStack() {
+  useEffect(() => {
+    const getPermissions = async () => {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        console.error('Audio permissions not granted');
+        return;
+      }
+    };
+  
+    getPermissions();
+  }, []);
   return (
     <NavigationContainer>
     <Stack.Navigator
@@ -24,7 +37,7 @@ function MyStack() {
       }}
     >
       <Stack.Screen name="Home" component={Landing} />
-      <Stack.Screen name="Music" component={Music} />
+      <Stack.Screen name="Music" component={TestMusic} />
       <Stack.Screen name="Generate" component={GeneratePlay} />
  
     </Stack.Navigator>
